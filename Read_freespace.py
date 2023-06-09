@@ -5,7 +5,7 @@ import math
 # 1 - Open CarMaker with option -cmdport
 '''
     For example: on a Windows system with CarMaker 8.0.2 installed on the default
-    folder send the command C:\IPG\carmaker\win64-8.0.2\bin\CM.exe -cmdport 16660
+    folder send the command C:\IPG\carmaker\win64-11.1.2\bin\CM.exe -cmdport 16660
 '''
 # 3 - Initialize pyCarMaker
 IP_ADDRESS = "localhost"
@@ -17,17 +17,22 @@ cm.connect()
 
 # 5 - Subscribe to vehicle speed
 # Create a Quantity instance for vehicle speed (vehicle speed is a float type variable)
-segments_num = 100
+segments_num = 200
 segments_x_quan = []
 segments_y_quan = []
-
+segments_type_quan = []
 
 UAQ_name = 'Sensor.FSpace.Front.Segm.'
+camera_name = 'Sensor.Camera.VehSensor_0.Obj.'
 for i in range(segments_num):
     x_name = UAQ_name + str(i) + '.ds.x'
     y_name = UAQ_name + str(i) + '.ds.y'
     segments_x_quan.append(Quantity(x_name,Quantity.FLOAT))
     segments_y_quan.append(Quantity(y_name,Quantity.FLOAT))
+
+for i in range(5):
+    segments_type_quan.append(Quantity(camera_name+str(i)+'.Type',Quantity.FLOAT))
+    
 
 time_quan = Quantity('Time',Quantity.FLOAT)
 ego_car_x = Quantity('Vhcl.Fr1.x',Quantity.FLOAT)
@@ -38,6 +43,9 @@ ego_car_z = Quantity('Vhcl.Fr1.z',Quantity.FLOAT)
 for i in range(segments_num):
     segments_x_quan[i].data = -1
     segments_y_quan[i].data = -1
+
+for i in range(5):
+    segments_type_quan[i].data = -1
 
 time_quan.data = -1
 ego_car_x.data = -1
@@ -51,6 +59,9 @@ for i in range(segments_num):
     cm.subscribe(segments_x_quan[i])
     cm.subscribe(segments_y_quan[i])
 
+for i in range(5):
+    cm.subscribe(segments_type_quan[i])
+
 cm.subscribe(time_quan)
 cm.subscribe(ego_car_x)
 cm.subscribe(ego_car_y)
@@ -63,8 +74,8 @@ cm.read()
 cm.read()
 time.sleep(0.1)
 
-time_gap = 0.5
-sample_time = 20
+time_gap = 0.2
+sample_time = 0.2
 c = sample_time/time_gap
 
 #从传感器读取数据中计算出障碍物的宽度，长度，以及障碍物中心点距离自车的x，y
@@ -74,11 +85,11 @@ obs_length = 0
 obs_length_list = []
 obs2car_x = 0
 obs2car_y = 0
-obs_class = 'car'
+obs_class = ''
 obs_length_init = 5
 
-while(c > 0):
-    c = c - 1
+while( 1 ):
+    #c = c - 1
     # Read data from carmaker
     cm.read()
     segments_x_data = []
@@ -90,10 +101,25 @@ while(c > 0):
         if segments_y_quan[i].data != 0:
             segments_y_data.append(segments_y_quan[i].data)
 
+    #检测物体种类
+    for i in range(5):
+        if segments_type_quan[i].data == 0 :
+            obs_class = 'car'
+            obs_length_init = 5
+        elif segments_type_quan[i].data == 1:
+            obs_class = 'truck'
+            obs_length_init = 10
+
+
     #未检测到物体时直接跳出循环
     if len(segments_x_data) == 0 and len(segments_y_data) == 0:
+        print(time_quan.data)
+        print('x=',ego_car_x.data)
+        print('y=',ego_car_y.data)
+        print('z=',ego_car_z.data)
+        print("未检测到障碍物")
         time.sleep(time_gap)
-        break
+        continue
 
     #判断是否检测到障碍物侧面
     if max(segments_x_data) - min(segments_x_data) < 0.1:
@@ -121,11 +147,11 @@ while(c > 0):
 
     #判断是否检测到障碍物正面
     if abs(max(segments_y_data) - min(segments_y_data)) < 0.1 :
-        #检测不到障碍物正面表明自车正在绕过障碍物，此时认为障碍物长度、宽度即为上一时刻所得数据
+        #检测不到障碍物正面表明自车正在绕过障碍物，此时认为障碍物长度、宽度即为相应列表中存储的最大值
         #障碍物长度
-        obs_length = sum(obs_length_list)/len(obs_length_list)
+        obs_length = max(obs_length_list)
         #障碍物宽度
-        obs_width = sum(obs_width_list)/len(obs_width_list)
+        obs_width = max(obs_width_list)
         #计算障碍物纵向偏移
         obs2car_x = max(segments_x_data)  - obs_length/2
         #计算障碍物横向偏移
@@ -134,8 +160,6 @@ while(c > 0):
 
     #纵向偏移是指freespace安装位置距离障碍物横对称线的距离
     #横向偏移是指freespace安装位置距离障碍物竖对称线的距离
-
-    
 
     print()
     print(time_quan.data)
@@ -148,4 +172,3 @@ while(c > 0):
     print('障碍物纵向偏移：',obs2car_x)
     
     time.sleep(time_gap)
-
