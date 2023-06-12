@@ -2,10 +2,10 @@ import path5
 import numpy as np
 import matplotlib.pyplot as plt
 
-def plan_path(ego_v_x, max_lane_width = 3.5, plan_range = 50, num_paths = 5):
+def plan_path(ego_car_v_x, max_lane_width = 3.5, plan_range = 50, num_paths = 5):
     
     #根据规划距离与自车速度计算规划时间
-    t = plan_range/ego_v_x
+    t = plan_range/ego_car_v_x
     #每次变道的横向偏移距离
     lane_width = np.linspace(-1*max_lane_width, max_lane_width, num_paths)
     
@@ -25,9 +25,9 @@ def plan_path(ego_v_x, max_lane_width = 3.5, plan_range = 50, num_paths = 5):
 
     for i in range(num_paths):
         # 规划车辆变道轨迹的函数
-        coeffs, max_curvature = path5.plan_trajectory(t,ego_v_x,lane_width=lane_width[i])
+        coeffs, max_curvature = path5.plan_trajectory(t,ego_car_v_x,lane_width=lane_width[i])
         #生成车辆轨迹
-        x,y,curvature = path5.generate_path(coeffs,t,ego_v_x)
+        x,y,curvature = path5.generate_path(coeffs,t,ego_car_v_x)
         #判断该轨迹是否符合车辆动力学性能
         is_success = True
         for curv_item in curvature:
@@ -59,5 +59,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
