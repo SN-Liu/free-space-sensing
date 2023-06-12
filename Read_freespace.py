@@ -38,6 +38,7 @@ time_quan = Quantity('Time',Quantity.FLOAT)
 ego_car_x = Quantity('Vhcl.Fr1.x',Quantity.FLOAT)
 ego_car_y = Quantity('Vhcl.Fr1.y',Quantity.FLOAT)
 ego_car_z = Quantity('Vhcl.Fr1.z',Quantity.FLOAT)
+ego_car_v_x = Quantity('Car.Aero.vres_1.x',Quantity.FLOAT)
 
 # Initialize with negative speed to indicate that value was not read
 for i in range(segments_num):
@@ -51,6 +52,7 @@ time_quan.data = -1
 ego_car_x.data = -1
 ego_car_y.data = -1
 ego_car_z.data = -1
+ego_car_v_x.data = -1
 
 # Subscribe (TCP socket need to be connected)
 
@@ -66,6 +68,7 @@ cm.subscribe(time_quan)
 cm.subscribe(ego_car_x)
 cm.subscribe(ego_car_y)
 cm.subscribe(ego_car_z)
+cm.subscribe(ego_car_v_x)
 
 # 6 - Read all subscribed quantities. In this example, vehicle speed and simulation status
 # For some reason, the first two reads will be incomplete and must be ignored
@@ -161,11 +164,23 @@ while( 1 ):
     #纵向偏移是指freespace安装位置距离障碍物横对称线的距离
     #横向偏移是指freespace安装位置距离障碍物竖对称线的距离
 
+    read_freespace = []
+    read_freespace.append(time_quan.data)       #时间戳
+    read_freespace.append(ego_car_x.data)       #自车x坐标
+    read_freespace.append(ego_car_y.data)       #自车y坐标
+    read_freespace.append(ego_car_z.data)       #自车z坐标
+    read_freespace.append(ego_car_v_x.data)     #自车x速度
+    read_freespace.append(obs_length)           #障碍物长度
+    read_freespace.append(obs_width)            #障碍物宽度
+    read_freespace.append(obs2car_y)            #障碍物横向偏移
+    read_freespace.append(obs2car_x)            #障碍物纵向偏移
+
     print()
     print(time_quan.data)
     print('x=',ego_car_x.data)
     print('y=',ego_car_y.data)
     print('z=',ego_car_z.data)
+    print('v=',ego_car_v_x.data)
     print('障碍物长度：',obs_length)
     print('障碍物宽度：',obs_width)
     print('障碍物横向偏移：',obs2car_y)
