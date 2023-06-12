@@ -2,7 +2,7 @@ import path5
 import numpy as np
 import matplotlib.pyplot as plt
 
-def plan_path(ego_car_v_x, max_lane_width = 3.5, plan_range = 50, num_paths = 5):
+def plan_path(ego_car_x,ego_car_y,ego_car_v_x, max_lane_width = 3.5, plan_range = 50, num_paths = 10):
     
     #根据规划距离与自车速度计算规划时间
     t = plan_range/ego_car_v_x
@@ -36,17 +36,24 @@ def plan_path(ego_car_v_x, max_lane_width = 3.5, plan_range = 50, num_paths = 5)
         if is_success == False:
             print("Lat_ACC Violated")
             continue
+        
+        #将路径平移为自车所在位置
+        new_x = [x_item + ego_car_x for x_item in x]
+        new_y = [y_item + ego_car_y for y_item in y]
+
         #写入信息
         path_info_all[i]['ID'] = str(i)
-        path_info_all[i]['x'] = x
-        path_info_all[i]['y'] = y
+        path_info_all[i]['x'] = new_x
+        path_info_all[i]['y'] = new_y
         path_info_all[i]['curvature'] = curvature
     
     return path_info_all
 
 def main():
-    ego_v_x = 20
-    path_info_all = plan_path(ego_v_x)
+    ego_car_x = 20
+    ego_car_y = -5
+    ego_car_v_x = 20
+    path_info_all = plan_path(ego_car_x, ego_car_y, ego_car_v_x)
 
     plt.figure()  # 创建一个新的图形
     for i in range(len(path_info_all)):
@@ -59,3 +66,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
